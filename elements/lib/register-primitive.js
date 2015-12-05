@@ -25,13 +25,33 @@ module.exports = function (tagName, proto) {
         value: {}
       },
 
+      transforms: {
+        value: {}
+      },
+
       applyComponentData: {
         value: function (data) {
           var self = this;
           data = data || {};
-          Object.keys(data).forEach(function (key) {
-            self.setEntityAttribute(key, undefined, data[key]);
+          Object.keys(data).forEach(function (componentName) {
+            var componentData = data[componentName];
+            self.setEntityAttribute(componentName, undefined, componentData);
           });
+          self.componentData = data;
+        }
+      },
+
+      getTransformedValue: {
+        value: function (attr, value) {
+          if (!this.transforms || !this.transforms[attr]) { return value; }
+          return this.transforms[attr].bind(this)(value);
+        }
+      },
+
+      createdCallback: {
+        value: function () {
+          this.data = {};
+          this.componentData = {};
         }
       },
 
@@ -55,14 +75,32 @@ module.exports = function (tagName, proto) {
           var componentPropertyPair = this.mappings[attr].split('.');
           var component = componentPropertyPair[0];
           var property = componentPropertyPair[1];
-          console.log('º', component, '{' + property + ': ' + value + '}');
+
+          value = this.getTransformedValue(attr, value);
+          console.log('•••••', attr, value);
 
           var theComponent = AComponents[component];
           if (theComponent) {
-            var data = {};
-            data[property] = value;
-            // this.updateComponent(component, data);
+            this.persistAttributeData(attr, value);
+            this.persistComponentData(component, property, value);
+            this.updateComponent(component, this.componentData[component]);
           }
+        }
+      },
+
+      persistAttributeData: {
+        value: function (attr, value) {
+          if (!this.data) { this.data = {}; }
+          this.data[attr] = value;
+        }
+      },
+
+      persistComponentData: {
+        value: function (component, property, value) {
+          if (!this.componentData[component]) {
+            this.componentData[component] = {};
+          }
+          this.componentData[component][property] = value;
         }
       },
 
@@ -72,7 +110,6 @@ module.exports = function (tagName, proto) {
             AEntity.prototype.attributeChangedCallback.call(this, attr, oldVal, newVal);
             return;
           }
-
           this.syncAttributeToComponent(attr, newVal);
         }
       }

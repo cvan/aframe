@@ -7,10 +7,15 @@ module.exports = registerPrimitive('a-cube', {
         primitive: 'box',
         width: 5,
         height: 5,
-        depth: 5
+        depth: 5,
       },
       material: {
-        color: 'gray'
+        color: 'gray',
+        opacity: 1.0,
+        shader: 'standard',
+        transparent: true,
+        metalness: 0.0,
+        roughness: 0.5
       }
     }
   },
@@ -20,7 +25,24 @@ module.exports = registerPrimitive('a-cube', {
       width: 'geometry.width',
       height: 'geometry.height',
       depth: 'geometry.depth',
-      color: 'material.color'
+      color: 'material.color',
+      opacity: 'material.opacity',
+      shader: 'material.shader',
+      transparent: 'material.transparent',
+      metalness: 'material.metalness',
+      roughness: 'material.roughness',
+      src: 'material.src'
+    }
+  },
+
+  transforms: {
+    value: {
+      width: function (value) {
+        if (value === '1') {
+          this.setAttribute('color', 'hotpink');
+        }
+        return value;
+      }
     }
   }
 });
