@@ -1,4 +1,5 @@
 var modules = {
+  'primitives': require('./primitives'),
   'a-event': require('./a-event'),
   'a-template': require('./a-template')
 };

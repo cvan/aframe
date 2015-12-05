@@ -1,5 +1,6 @@
 var aframeCore = require('@mozvr/aframe-core');
 var AEvent = require('../a-event/a-event');
+var dotProp = require('dot-prop');
 
 var aframeCoreUtils = aframeCore.utils;
 var registerElement = aframeCore.registerElement.registerElement;
@@ -162,7 +163,10 @@ module.exports.wrapAEventElement = function (newTagName, eventName, data) {
   return wrapElement(newTagName, AEvent, data);
 };
 
+module.exports.dotProp = dotProp;
+
 // Useful utils from aframe-core.
+module.exports.debug = aframeCore.debug;
 module.exports.error = aframeCoreUtils.error;
 module.exports.extend = aframeCoreUtils.extend;
 module.exports.fireEvent = aframeCoreUtils.fireEvent;

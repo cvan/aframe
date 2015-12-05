@@ -32,7 +32,8 @@
     "vulcanize": "^1.13.1"
   },
   "dependencies": {
-    "@mozvr/aframe-core": "^0.0.0"
+    "@mozvr/aframe-core": "^0.0.0",
+    "dot-prop": "^2.2.0"
   },
   "link": true,
   "browserify": {
