@@ -56,6 +56,25 @@ To start the local development server:
 
 And fire up __[http://localhost:9000](http://localhost:9000)__!
 
+To have the URL open after the server starts:
+
+    OPEN=1 npm start
+
+To enable live reloading (i.e., automatic page refreshing upon any file changes):
+
+    OPEN=1 LIVE=1 npm start
+
+## Browser console logging
+
+If you'd like to see helpful logs, warnings, and errors, you can enable logging from the console of your favourite developer tools:
+
+    localStorage.logs = 1
+
+And to disable:
+
+    localStorage.logs = 0
+
+
 ## Maintainers
 
 Ensure you have [cloned the repo and installed the dependencies](#local-installation-and-development).
