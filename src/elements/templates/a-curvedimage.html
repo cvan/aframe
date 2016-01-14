@@ -8,6 +8,7 @@
           opacity="1.0"
           transparent="true"
           src="">
+  <img id="a-curvedimage-${__counter__}" src="${src}" class="a-hidden">
   <a-entity geometry="primitive: cylinder;
                       radius: ${radius};
                       height: ${height};
@@ -21,5 +22,5 @@
                       shader: flat;
                       side: double;
                       transparent: ${transparent};
-                      src: url(${src})"></a-entity>
+                      src: #a-curvedimage-${__counter__}"></a-entity>
 </template>

@@ -14,6 +14,7 @@
           metalness="0.0"
           roughness="0.5"
           src="">
+  <img id="a-ring-${__counter__}" src="${src}" class="a-hidden">
   <a-entity geometry="primitive: ring;
                       radiusInner: ${radius-inner};
                       radiusOuter: ${radius-outer};
@@ -28,5 +29,5 @@
                       transparent: ${transparent};
                       metalness: ${metalness};
                       roughness: ${roughness};
-                      src: url(${src})"></a-entity>
+                      src: #a-ring-${__counter__}"></a-entity>
 </template>

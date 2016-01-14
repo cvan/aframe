@@ -18,6 +18,7 @@
           roughness="0.5"
           side="front"
           src="">
+  <img id="a-cylinder-${__counter__}" src="${src}" class="a-hidden">
   <a-entity geometry="primitive: cylinder;
                       radius: ${radius};
                       radiusTop: ${radius-top};
@@ -36,5 +37,5 @@
                       roughness: ${roughness};
                       side: ${side};
                       transparent: ${transparent};
-                      src: url(${src})"></a-entity>
+                      src: #a-cylinder-${__counter__}"></a-entity>
 </template>

@@ -11,6 +11,7 @@
           metalness="0.0"
           roughness="0.5"
           src="">
+  <img id="a-cube-${__counter__}" src="${src}" class="a-hidden">
   <a-entity geometry="primitive: box;
                       width: ${width};
                       height: ${height};
@@ -22,5 +23,5 @@
                       transparent: ${transparent};
                       metalness: ${metalness};
                       roughness: ${roughness};
-                      src: url(${src})"></a-entity>
+                      src: #a-cube-${__counter__}"></a-entity>
 </template>

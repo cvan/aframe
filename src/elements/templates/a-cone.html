@@ -17,6 +17,7 @@
           roughness="0.5"
           side="front"
           src="">
+  <img id="a-cone-${__counter__}" src="${src}" class="a-hidden">
   <a-entity geometry="primitive: cone;
                       radiusTop: ${radius-top};
                       radiusBottom: ${radius-bottom};
@@ -34,5 +35,5 @@
                       roughness: ${roughness};
                       side: ${side};
                       transparent: ${transparent};
-                      src: url(${src})"></a-entity>
+                      src: #a-cone-${__counter__}"></a-entity>
 </template>

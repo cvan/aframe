@@ -10,6 +10,7 @@
           metalness="0.0"
           roughness="0.5"
           src="">
+  <img id="a-plane-${__counter__}" src="${src}" class="a-hidden">
   <a-entity geometry="primitive: plane;
                       height: ${height};
                       width: ${width};
@@ -21,5 +22,5 @@
                       metalness: ${metalness};
                       roughness: ${roughness};
                       side: double;
-                      src: url(${src})"></a-entity>
+                      src: #a-plane-${__counter__}"></a-entity>
 </template>
