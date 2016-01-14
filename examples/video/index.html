@@ -3,19 +3,117 @@
   <head>
     <meta charset="utf-8">
     <title>Video</title>
-    <meta name="description" content="Video - A-Frame Core">
+    <meta name="description" content="Video - A-Frame">
     <script src="../../dist/aframe.js"></script>
+    <script>
+
+var user = localStorage.user;
+if (!user) {
+  user = localStorage.user = prompt('username?');
+}
+
+function log () {
+  var msg = Array.prototype.join.call(arguments, ' ').replace(/ /g, '_');
+  new Image().src = '/' + user + '/log/' + msg;
+  console.log(msg);
+}
+
+console.log('start');
+
+document.addEventListener('DOMContentLoaded', function () {
+  log('dom content loaded');
+  var video = document.querySelector('a-assets video[autoplay], video[autoplay]');
+
+  if (video) {
+    console.log('found autoplay video', video);
+  }
+
+var scene = document.querySelector('a-scene');
+
+scene.addEventListener('load', sceneLoaded);
+
+if (scene.hasLoaded) {
+  console.log('already');
+  sceneLoaded();
+}
+
+function sceneLoaded () {
+
+  console.log('scene loaded');
+
+  // console.log(this.el.components.material.textureSrc)
+  var entitiesWithVideos = document.querySelectorAll('[material*="src:"][material*="url("]');
+
+  setTimeout(function () {
+    Array.prototype.forEach.call(entitiesWithVideos, function (entity) {
+      var hasVideo = entity.components.material.material.videoEl;
+      if (hasVideo) {
+        // Add attribute `webkit-playsinline`.
+        console.log('has video', entity);
+        video = entity;
+      }
+    });
+
+  }, 500);
+
+}
+
+
+  // [
+  //   'canplay',
+  //   'canplaythrough',
+  //   'durationchange',
+  //   'emptied',
+  //   'error',
+  //   'ended',
+  //   'loadeddata',
+  //   'loadedmetadata',
+  //   'loadstart',
+  //   'play',
+  //   'playing',
+  //   'stalled',
+  //   'waiting'
+  // ].forEach(function (eventName) {
+  //   video.addEventListener(eventName, function () {
+  //     log(eventName);
+  //   });
+  // });
+
+  document.addEventListener('touchstart', play);
+  document.addEventListener('click', play);
+
+  function play () {
+    alert('play');
+    video.play();
+    document.removeEventListener('touchstart', play);
+    document.removeEventListener('click', play);
+  }
+
+  if (video) {
+    video.play();
+  }
+
+  // setTimeout(function () {
+  //   console.log(video.canPlay);
+  //   console.log(video.currentTime);
+  // }, 500);
+
+});
+
+    </script>
   </head>
   <body>
     <a-assets>
-      <video id="videoParis"
-             src="https://ucarecdn.com/4130c599-445f-4e76-9052-49978e972641/"
+<!--       <video id="videoParis"
+             src="http://ucarecdn.com/4130c599-445f-4e76-9052-49978e972641/"
              width="160" height="90" autoplay loop="true"
              crossOrigin="anonymous"></video>
+-->
       <video id="videoHypercube"
-             src="https://ucarecdn.com/210dd043-dcd3-446d-9b36-ad19471f6273/"
+             src="video.mp4"
              width="160" height="90" autoplay loop="true"
-             crossOrigin="anonymous"></video>
+             crossOrigin="anonymous"
+             webkit-playsinline="true"></video>
     </a-assets>
 
     <a-scene stats="true">
@@ -28,18 +126,26 @@
       Author: Mythomen <https://vimeo.com/mythomen>
       URL:    https://vimeo.com/147309712
       -->
-      <a-entity material="shader: flat; src: #videoParis"
+<!--       <a-entity material="shader: flat; src: #videoParis"
                 geometry="primitive: plane; width: 160; height: 90"
                 position="0 60 -250"
                 rotation="0 35 0">
       </a-entity>
-
+ -->
       <!--
       SOURCE
       Title:  Hypercube Study
       Author: Dan Allison <https://vimeo.com/danallison>
       URL:    https://vimeo.com/5081158
       -->
+
+<!--       <a-entity material="shader: flat; src: url(http://ucarecdn.com/210dd043-dcd3-446d-9b36-ad19471f6273/)"
+                geometry="primitive: plane; width: 160; height: 90"
+                position="0 -60 -200"
+                rotation="0 -35 0">
+      </a-entity> -->
+
+
       <a-entity material="shader: flat; src: #videoHypercube"
                 geometry="primitive: plane; width: 160; height: 90"
                 position="0 -60 -200"
