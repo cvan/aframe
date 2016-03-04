@@ -1,5 +1,5 @@
 module.exports = function initMetaTags (scene) {
-  if (!scene.isMobile) { return; }
+  // if (!scene.isMobile) { return; }
   injectMetaTags();
 };
 
@@ -15,32 +15,48 @@ module.exports = function initMetaTags (scene) {
  * @type {Object}
  */
 function injectMetaTags () {
-  var headEl;
-  var meta = document.querySelector('meta[name="viewport"]');
+  var headEl = document.head;
+
+  var meta;
   var metaTags = [];
+  var metaAttrs = [
+    {name: 'viewport', content: 'width=device-width,initial-scale=1,shrink-to-fit=no,user-scalable=no'},
 
-  if (meta) { return; }
+    // iOS-specific meta tags for fullscreen when pinning to homescreen.
+    {name: 'apple-mobile-web-app-capable', content: 'yes'},
+    {name: 'apple-mobile-web-app-status-bar-style', content: 'black'},
+    {rel: 'apple-touch-icon', content: 'https://aframe.io/images/aframe-logo.png', sizes: '480x480'},
 
-  headEl = document.getElementsByTagName('head')[0];
-  meta = document.createElement('meta');
-  meta.name = 'viewport';
-  meta.content =
-    'width=device-width,initial-scale=1,shrink-to-fit=no,user-scalable=no';
-  headEl.appendChild(meta);
-  metaTags.push(meta);
-
-  // iOS-specific meta tags for fullscreen when pinning to homescreen.
-  meta = document.createElement('meta');
-  meta.name = 'apple-mobile-web-app-capable';
-  meta.content = 'yes';
-  headEl.appendChild(meta);
-  metaTags.push(meta);
-
-  meta = document.createElement('meta');
-  meta.name = 'apple-mobile-web-app-status-bar-style';
-  meta.content = 'black';
-  headEl.appendChild(meta);
-  metaTags.push(meta);
-
+    // W3C-standardised meta tags.
+    {name: 'web-app-capable', content: 'yes'},
+    {name: 'theme-color', content: 'black'}
+  ];
+  metaAttrs.forEach(function (attrs) {
+    meta = createMetaTagIfDoesNotExist(attrs);
+    if (!meta) { return; }
+    var headScriptEl = headEl.querySelector('script');
+    if (headScriptEl) {
+      headScriptEl.parentNode.insertBefore(meta, headScriptEl);
+    } else {
+      headEl.appendChild(meta);
+    }
+    metaTags.push(meta);
+  });
   return metaTags;
+}
+
+function createMetaTagIfDoesNotExist (attrs) {
+  if (!attrs || attrs.name && document.querySelector('meta[name="' + attrs.name + '"]')) {
+    return;
+  }
+  return createTag('meta', attrs);
+}
+
+function createTag (name, attrs) {
+  if (!attrs) { return; }
+  var meta = document.createElement(name);
+  Object.keys(attrs).forEach(function (key) {
+    meta[key] = attrs[key];
+  });
+  return meta;
 }

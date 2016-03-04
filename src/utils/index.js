@@ -125,7 +125,7 @@ module.exports.isMobile = function () {
 };
 
 var isIOS = module.exports.isIOS = function () {
-  return /iPad|iPhone|iPod/.test(navigator.platform);
+  return /i(pad|phone|pod)i/.test(navigator.platform);
 };
 
 /**

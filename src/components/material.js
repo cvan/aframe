@@ -1,12 +1,18 @@
 /* global Promise */
+var createLoop = require('raf-loop');
+var createSource = require('./source-element');
 var debug = require('../utils/debug');
-var diff = require('../utils').diff;
+var utils = require('../utils');
 var registerComponent = require('../core/component').registerComponent;
+var runParallel = require('run-parallel');
 var srcLoader = require('../utils/src-loader');
 var THREE = require('../lib/three');
 
+var diff = utils.diff;
 var CubeLoader = new THREE.CubeTextureLoader();
 var error = debug('components:material:error');
+var extend = utils.extend;
+var isIOS = utils.isIOS();
 var TextureLoader = new THREE.TextureLoader();
 var texturePromises = {};
 var warn = debug('components:material:warn');
@@ -177,6 +183,7 @@ module.exports.Component = registerComponent('material', {
   updateTexture: function (src) {
     var data = this.data;
     var material = this.material;
+    var el = this.el;
     if (src) {
       if (src !== this.textureSrc) {
         // Texture added or changed.
@@ -189,7 +196,7 @@ module.exports.Component = registerComponent('material', {
       material.needsUpdate = true;
     }
     function loadImage (src) { loadImageTexture(material, src, data.repeat); }
-    function loadVideo (src) { loadVideoTexture(material, src, data.width, data.height); }
+    function loadVideo (src) { loadVideoTexture(material, src, data.width, data.height, el); }
   }
 });
 
@@ -248,6 +255,9 @@ function createVideoEl (material, src, width, height) {
   function onError () {
     warn('The URL "$s" is not a valid image or video', src);
   }
+
+  el.setAttribute('webkit-playsinline', '');  // TODO: Move below.
+
   el.width = width;
   el.height = height;
   // Attach event listeners if brand new video element.
@@ -262,6 +272,233 @@ function createVideoEl (material, src, width, height) {
   return el;
 }
 
+// var needsGestureForVideo = isIOS && 'standalone' in navigator && navigator.standalone;
+var needsCanvasVideo = isIOS && 'standalone' in navigator && navigator.standalone;
+// // In fallback + audio mode (iOS), we need to show a Play button.
+// var needsGesture = /Android/i.test(navigator.userAgent) || (fallback && canvasVideo.audio)
+
+function noop () {}
+
+var createVideoElement = simpleMediaElement.bind(null, 'video');
+var createAudioElement = simpleMediaElement.bind(null, 'audio');
+
+function createCanvasVideo (source, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts;
+    opts = {};
+  }
+
+  opts = extend({}, opts);
+  cb = cb || noop;
+
+  var fallback = typeof opts.fallback === 'boolean'
+    ? opts.fallback : isIOS;
+  var video = opts.element || document.createElement('video');
+  var audio;
+
+  if (fallback && !opts.muted) {
+    audio = document.createElement('audio');
+
+    // Disable autoplay for this scenario.
+    opts.autoplay = false;
+  }
+
+  var loop = createLoop();
+  var lastTime = window.performance.now();
+
+  var fps = typeof opts.fps === undefined ? 60 : opts.fps;
+  var elapsed = 0;
+  var canvas = opts.canvas || document.createElement('canvas');
+  var context = null;
+  var render = opts.render || defaultRender;
+
+  var canvasVideo = {};
+  canvasVideo.play = play;
+  canvasVideo.pause = pause;
+  canvasVideo.canvas = canvas;
+  canvasVideo.video = video;
+  canvasVideo.audio = audio;
+  canvasVideo.fallback = fallback;
+
+  var duration = Infinity;
+  var looping = opts.loop;
+
+  if (fallback) {
+    console.log('source', source);
+    // Load audio and muted video.
+    runParallel([
+      function (next) {
+        createVideoElement(source, extend({}, opts, {
+          muted: true,
+          element: video
+        }), next);
+      },
+      function (next) {
+        createAudioElement(source, extend({}, opts, {
+          element: audio
+        }), next);
+      }
+    ], ready);
+  } else {
+    createVideoElement(source, extend({}, opts, {
+      element: video
+    }), ready);
+  }
+
+  function ready (err) {
+    if (err) { return cb(err); }
+
+    // Maintain aspect ratio if only one dimension is specified.
+    var aspect = video.videoWidth / video.videoHeight;
+    if (typeof opts.width === 'number' && typeof opts.height === 'number') {
+      canvas.width = opts.width;
+      canvas.height = opts.height;
+    } else if (typeof opts.width === 'number') {
+      canvas.width = opts.width;
+      canvas.height = opts.width / aspect;
+    } else if (typeof opts.height === 'number') {
+      canvas.height = opts.height;
+      canvas.width = opts.height * aspect;
+    } else {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+
+    if (fallback) {
+      video.addEventListener('timeupdate', drawFrame, false);
+      if (audio) {
+        audio.addEventListener('ended', function () {
+          if (looping) {
+            audio.currentTime = 0;
+          } else {
+            loop.stop();
+          }
+        }, false);
+      }
+    }
+
+    duration = video.duration;
+    loop = createLoop(tick);
+    window.requestAnimationFrame(drawFrame);
+    cb(null, canvasVideo);
+  }
+
+  function play () {
+    lastTime = window.performance.now();
+    loop.start();
+    if (audio) { audio.play(); }
+    if (!fallback) { video.play(); }
+  }
+
+  function pause () {
+    loop.stop();
+    if (audio) { audio.pause(); }
+    if (!fallback) { video.pause(); }
+  }
+
+  function tick () {
+    // Render immediately on desktop.
+    if (!fallback) {
+      return drawFrame();
+    }
+
+    // On iOS, we render based on audio (if it exists)
+    // otherwise we step forward by a target FPS.
+    var time = window.performance.now();
+    elapsed = (time - lastTime) / 1000;
+    if (elapsed >= ((1000 / fps) / 1000)) {
+      if (fallback) {  // Seek and wait for timeupdate.
+        if (audio) {
+          video.currentTime = audio.currentTime;
+        } else {
+          video.currentTime = video.currentTime + elapsed;
+        }
+      }
+      lastTime = time;
+    }
+
+    // On iOS, when audio is not present we need to track the duration.
+    if (fallback && !audio) {
+      if (Math.abs(video.currentTime - duration) < 0.1) {
+        // Whether to restart or just stop the rAF loop.
+        if (looping) {
+          video.currentTime = 0;
+        } else {
+          loop.stop();
+        }
+      }
+    }
+  }
+
+  function drawFrame () {
+    render(video);
+  }
+
+  function defaultRender (video) {
+    if (!context) { context = canvas.getContext('2d'); }
+    if (!context) {
+      render = noop;
+      error('No 2d context for <canvas> element');
+    }
+    var width = canvas.width;
+    var height = canvas.height;
+    context.clearRect(0, 0, width, height);
+    context.drawImage(video, 0, 0, width, height);
+  }
+}
+
+function simpleMediaElement (elementName, sources, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts;
+    opts = {};
+  }
+  cb = cb || noop;
+  opts = opts || {};
+
+  if (!Array.isArray(sources)) {
+    sources = [sources];
+  }
+
+  var media = opts.element || document.createElement(elementName);
+
+  if (opts.loop) media.setAttribute('loop', true);
+  if (opts.muted) media.setAttribute('muted', 'muted');
+  if (opts.autoplay) media.setAttribute('autoplay', 'autoplay');
+  if (opts.crossOrigin) media.setAttribute('crossorigin', opts.crossOrigin);
+  if (opts.preload) media.setAttribute('preload', opts.preload);
+  if (opts.poster) media.setAttribute('poster', opts.poster);
+  if (typeof opts.volume !== 'undefined') media.setAttribute('volume', opts.volume);
+
+  sources.forEach(function (source) {
+    media.appendChild(createSource(source));
+  });
+
+  setTimeout(start);
+
+  return media;
+
+  function start () {
+    media.addEventListener('canplay', function () {
+      cb(null, media);
+      cb = noop;
+    });
+    media.addEventListener('error', function (err) {
+      cb(err);
+      cb = noop;
+    });
+    media.addEventListener('readystatechange', checkReadyState);
+    media.load();
+    checkReadyState();
+  }
+
+  function checkReadyState () {
+    if (media.readyState > media.HAVE_FUTURE_DATA) {
+      cb(null, media);
+      cb = noop;
+    }
+  }
+}
+
 /**
  * Sets video texture on material as map.
  *
@@ -269,15 +506,75 @@ function createVideoEl (material, src, width, height) {
  * @param {string} src - Url to a video file.
  * @param {number} width - Width of the video.
  * @param {number} height - Height of the video.
+ * @param {object} el - Element.
 */
-function loadVideoTexture (material, src, height, width) {
+function loadVideoTexture (material, src, height, width, el) {
   // three.js video texture loader requires a <video>.
   var videoEl = typeof src !== 'string' ? fixVideoAttributes(src) : createVideoEl(material, src, height, width);
-  var texture = new THREE.VideoTexture(videoEl);
-  texture.minFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  material.map = texture;
-  material.needsUpdate = true;
+  var texture;
+
+  // media.addEventListener('canplay', function () {
+  //   cb(null, media)
+  //   cb = noop
+  // }, false)
+  // media.addEventListener('error', function (err) {
+  //   cb(err)
+  //   cb = noop
+  // }, false)
+
+  // videoEl.addEventListener('canplaythrough', function () {
+  //   videoEl.play(); // wait until enough of the video has been downloaded to play it through without hiccups
+  // });
+
+  // videoEl.load();  // must be called after the canplaythrough event listener is set
+  // videoEl.play();  // required for pre-iOS 4.3 devices
+  // videoEl.pause(); // required for pre-iOS 4.3 devices
+
+  needsCanvasVideo = true;
+
+  if (needsCanvasVideo) {
+    videoEl.pause();
+
+    createCanvasVideo(videoEl, {
+      fallback: true,  // TODO: Remove.
+      loop: videoEl.loop,
+      autoplay: videoEl.autoplay,
+      preload: videoEl.preload,
+      width: videoEl.width,
+      height: videoEl.height,  // TODO: Remove.
+      muted: true,
+      crossOrigin: videoEl.crossOrigin
+    }, startVideo);
+  } else {
+    texture = new THREE.VideoTexture(videoEl);
+    setTexture();
+  }
+
+  function startVideo (err, canvasVideo) {
+    if (err) {
+      console.error(err);
+      return window.alert(err.message);  // TODO: Remove later.
+    }
+
+    console.log(canvasVideo.canvas);
+    document.body.appendChild(canvasVideo.canvas);
+    texture = new THREE.Texture(canvasVideo.canvas);
+    // texture.addEventListener('load', function () {
+    setTexture();
+    // });
+
+    el.sceneEl.addEventListener('click', function () {
+      console.log('scene clicked');
+      canvasVideo.play();
+    });
+  }
+
+  function setTexture () {
+    texture.minFilter = THREE.LinearFilter;
+    texture.needsUpdate = true;
+    material.map = texture;
+    material.needsUpdate = true;
+  }
 }
 
 /**
@@ -297,6 +594,13 @@ function fixVideoAttributes (videoEl) {
   videoEl.controls = videoEl.getAttribute('controls') !== 'false';
   if (videoEl.getAttribute('preload') === 'false') {
     videoEl.preload = 'none';
+  }
+  if (!videoEl.hasAttribute('crossorigin')) {
+    videoEl.crossorigin = true;
+  }
+  if (!videoEl.hasAttribute('webkit-playsinline')) {
+    // Allows videos to be played inline on iOS.
+    videoEl.setAttribute('webkit-playsinline', '');
   }
   return videoEl;
 }
