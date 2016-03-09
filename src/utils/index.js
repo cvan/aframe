@@ -130,6 +130,18 @@ var isIOS = module.exports.isIOS = function () {
   return /iPad|iPhone|iPod/.test(navigator.platform);
 };
 
+module.exports.isSafari = function () {
+  return /safari/i.test(navigator.userAgent);
+};
+
+var isIOSStandalone = module.exports.isIOSStandalone = function () {
+  return 'standalone' in navigator && navigator.standalone;
+};
+
+module.exports.isIOSBrowser = function () {
+  return isIOS() && !isIOSStandalone();
+};
+
 /**
  * Checks mobile device orientation
  * @return {Boolean} True if landscape orientation

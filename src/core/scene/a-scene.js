@@ -13,6 +13,8 @@ var ANode = require('../a-node');
 
 var registerElement = re.registerElement;
 var isMobile = utils.isMobile();
+var isIOSBrowser = utils.isIOSBrowser();
+var isSafari = utils.isSafari();
 
 /**
  * Scene element, holds all entities.
@@ -75,7 +77,8 @@ var AScene = module.exports = registerElement('a-scene', {
         initWakelock(this);
 
         window.addEventListener('load', this.resize.bind(this));
-        window.addEventListener('resize', this.resize.bind(this), false);
+        window.addEventListener('resize', this.resize.bind(this));
+        window.addEventListener('material-texture-loadstart', this.promptForIOS.bind(this));
         this.addEventListener('fullscreen-exit', this.exitVR.bind(this));
         this.play();
       },
@@ -142,6 +145,22 @@ var AScene = module.exports = registerElement('a-scene', {
         this.setMonoRenderer();
         this.removeState('vr-mode');
         this.emit('exit-vr', { target: this });
+      }
+    },
+
+    promptForIOS: {
+      value: function () {
+        if (isIOSBrowser) {
+          // TODO: Do this only for the first event.
+
+          if (isSafari) {
+            // add to homescreen.
+            window.alert('add to homescreen');
+          } else {
+            // alert to use safari.
+            window.alert('use safari to add to homescreen');
+          }
+        }
       }
     },
 

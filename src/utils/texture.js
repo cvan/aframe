@@ -10,7 +10,9 @@ var debug = require('./debug');
 var THREE = require('../lib/three');
 
 var EVENTS = {
-  TEXTURE_LOADED: 'material-texture-loaded'
+  TEXTURE_STARTED: 'material-texture-loadstart',
+  TEXTURE_LOADED: 'material-texture-loaded',
+  VIDEO_LOADSTART: 'material-video-loadstart'
 };
 var error = debug('components:texture:error');
 var textureCache = {};
@@ -37,6 +39,8 @@ function loadImage (material, data, src) {
     textureCache[src][repeat].then(handleImageTextureLoaded);
     return;
   }
+
+  el.emit('material-texture-loadstart', {src: src});
 
   // Material instance is first to try to load this texture. Load it.
   textureCache[srcString] = textureCache[srcString] || {};
@@ -99,6 +103,7 @@ function loadVideo (material, data, src) {
   function handleVideoTextureLoaded (texture, videoEl) {
     updateMaterial(material, texture);
     el.emit(EVENTS.TEXTURE_LOADED, { element: videoEl, src: src });
+    el.emit(EVENTS.VIDEO_LOADSTART, { element: videoEl, src: src });
     videoEl.addEventListener('loadeddata', function () {
       el.emit('material-video-loadeddata', { element: videoEl, src: src });
     });
