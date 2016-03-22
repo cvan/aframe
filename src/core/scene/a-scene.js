@@ -149,16 +149,17 @@ var AScene = module.exports = registerElement('a-scene', {
     },
 
     promptForIOS: {
-      value: function () {
+      value: function (e) {
+        // TODO: Check if it's a video.
         if (isIOSBrowser) {
           // TODO: Do this only for the first event.
 
           if (isSafari) {
             // add to homescreen.
-            window.alert('add to homescreen');
+            // console.log('add to homescreen');
           } else {
             // alert to use safari.
-            window.alert('use safari to add to homescreen');
+            // console.log('use safari to add to homescreen');
           }
         }
       }
