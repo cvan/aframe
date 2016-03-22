@@ -5,12 +5,14 @@
     <title>Videosphere</title>
     <meta name="description" content="Videosphere - A-Frame">
     <script src="../../dist/aframe.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
   </head>
   <body>
     <a-scene stats="true">
       <a-assets>
         <video id="lego" preload="true"
-               src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/t-197/walking_the_dog_360_video_short.webm"
+               src="https://ucarecdn.com/23ffe93c-3656-469a-ab17-3e9c6c37e68a/"
                width="360" height="360" autoplay loop="true"
                crossOrigin="anonymous"></video>
       </a-assets>
@@ -21,4 +23,10 @@
       </a-entity>
     </a-scene>
   </body>
+  <script>
+    window.addEventListener('click', function () {
+      alert('click');
+      logo.play();
+    })
+  </script>
 </html>
