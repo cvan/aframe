@@ -13,6 +13,8 @@ var ANode = require('../a-node');
 
 var registerElement = re.registerElement;
 var isMobile = utils.isMobile();
+var broadcastMessage = utils.broadcastMessage;
+var getUniqueSelector = utils.getUniqueSelector;
 
 /**
  * Scene element, holds all entities.
@@ -48,6 +50,7 @@ var AScene = module.exports = registerElement('a-scene', {
         this.isScene = true;
         this.object3D = new THREE.Scene();
         this.systems = {};
+        this.toBroadcast = {};
         this.time = 0;
         this.init();
       }
@@ -125,7 +128,7 @@ var AScene = module.exports = registerElement('a-scene', {
      * Generally must be triggered on user action for requesting fullscreen.
      */
     enterVR: {
-      value: function (event) {
+      value: function () {
         this.setStereoRenderer();
         if (isMobile) {
           setFullscreen(this.canvas);
@@ -133,7 +136,11 @@ var AScene = module.exports = registerElement('a-scene', {
           this.stereoRenderer.setFullScreen(true);
         }
         this.addState('vr-mode');
-        this.emit('enter-vr', event);
+        var eventDetail = {target: this};
+        this.emit('enter-vr', eventDetail);
+        if (this.toBroadcast.events) {
+          broadcastMessage('event', 'enter-vr', {sceneSelector: getUniqueSelector(this)});
+        }
       }
     },
 
@@ -141,7 +148,11 @@ var AScene = module.exports = registerElement('a-scene', {
       value: function () {
         this.setMonoRenderer();
         this.removeState('vr-mode');
-        this.emit('exit-vr', { target: this });
+        var eventDetail = {target: this};
+        this.emit('exit-vr', eventDetail);
+        if (this.toBroadcast.events) {
+          broadcastMessage('event', 'exit-vr', {sceneSelector: getUniqueSelector(this)});
+        }
       }
     },
 

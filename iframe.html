@@ -1,0 +1,15 @@
+<iframe id="iframe" src="http://localhost:9000/examples/boilerplate-helloworld/" allowfullscreen></iframe>
+<script>
+iframe.addEventListener('load', function () {
+
+  iframe.contentWindow.postMessage({type: 'listen', data: {events: true}}, '*');
+
+  window.addEventListener('message', function (e) {
+    var type = e.data.type;
+    console.log(type === 'event');
+    var data = e.data.data;
+    console.log(data);
+  });
+
+});
+</script>

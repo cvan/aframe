@@ -204,5 +204,29 @@ module.exports.isIframed = function () {
   return window.top !== window.self;
 };
 
+module.exports.broadcastMessage = function (type, name, detail, origin) {
+  detail = detail || {};
+  origin = origin || '*';
+  window.top.postMessage({
+    type: type,
+    data: {
+      name: name,
+      detail: detail || {}
+    }
+  }, origin);
+};
+
+module.exports.getUniqueSelector = function (el) {
+  if (!el) { return; }
+  var selector = (el.tagName || '').toLowerCase();
+  if (el.id) {
+    selector += '#' + el.id;
+  }
+  for (var i = 0, len = el.attributes.length; i < len; i++) {
+    selector += '[' + el.attributes[i].name + '="' + el.attributes[i].value + '"]';
+  }
+  return selector;
+};
+
 // Must be at bottom to avoid circular dependency.
 module.exports.srcLoader = require('./src-loader');

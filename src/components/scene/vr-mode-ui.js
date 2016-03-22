@@ -30,7 +30,6 @@ module.exports.Component = registerComponent('vr-mode-ui', {
 
     this.enterVR = scene.enterVR.bind(scene);
     this.exitVR = scene.exitVR.bind(scene);
-    this.insideLoader = false;
     this.enterVREl = null;
     this.orientationModalEl = null;
 
@@ -38,15 +37,44 @@ module.exports.Component = registerComponent('vr-mode-ui', {
     scene.addEventListener('enter-vr', this.hide.bind(this));
     scene.addEventListener('exit-vr', this.show.bind(this));
 
-    window.addEventListener('message', function (event) {
-      if (event.data.type === 'loaderReady') {
-        self.insideLoader = true;
-        self.remove();
-      }
-    });
+    // Developers may want to toggle the VR UI but not enter/exit VR.
+    window.addEventListener('message', iframedMessageHandler);
 
     // Orientational modal toggling on iOS.
-    window.addEventListener('orientationchange', function () {
+    window.addEventListener('orientationchange', orientationChangeHandler);
+
+    function iframedMessageHandler (event) {
+      if (!event.data) { return; }
+      var type = event.data.type;
+      var data = event.data.data;
+      switch (type) {
+        case 'listen': {
+          Object.keys(data || {}).forEach(function (key) {
+            scene.toBroadcast[key] = Boolean(data[key]);
+          });
+          console.error('listening to', data);
+        }
+        case 'vr-mode-ui': {
+          switch (data) {
+            case 'show': {
+              self.show();
+              break;
+            }
+            case 'hide': {
+              self.hide();
+              break;
+            }
+            case 'remove': {
+              self.toRemove = true;
+              self.remove();
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    function orientationChangeHandler () {
       if (!isIOS) { return; }
       if (!self.orientationModalEl) { return; }
 
@@ -56,13 +84,13 @@ module.exports.Component = registerComponent('vr-mode-ui', {
       } else {
         self.orientationModalEl.classList.add(HIDDEN_CLASS);
       }
-    });
+    }
   },
 
   update: function () {
     var scene = this.el;
 
-    if (!this.data.enabled || this.insideLoader) { return this.remove(); }
+    if (!this.data.enabled || this.toRemove) { return this.remove(); }
     if (this.enterVREl || this.orientationModalEl) { return; }
 
     // Add UI if enabled and not already present.
