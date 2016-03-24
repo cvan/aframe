@@ -177,7 +177,17 @@ var AScene = module.exports = registerElement('a-scene', {
 
         // Update camera.
         size = getCanvasSize(canvas, isMobile);
+        // size.width = 375;
+        // size.height = 667;
         camera.aspect = size.width / size.height;
+
+        // console.error('size', size);
+
+        // var w = Math.max(window.screen.width, window.screen.height) * window.devicePixelRatio;
+        // var h = Math.min(window.screen.width, window.screen.height) * window.devicePixelRatio;
+
+        // camera.aspect = w / h;
+
         camera.updateProjectionMatrix();
 
         // Notify renderer of size change.

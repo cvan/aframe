@@ -32,7 +32,8 @@ var AEntity = require('./core/a-entity'); // Depends on ANode and core component
 window.hasNonPolyfillWebVRSupport = !!navigator.getVRDevices;
 window.WebVRConfig = {
   TOUCH_PANNER_DISABLED: true,
-  MOUSE_KEYBOARD_CONTROLS_DISABLED: true
+  MOUSE_KEYBOARD_CONTROLS_DISABLED: true,
+  // BUFFER_SCALE: window.devicePixelRatio / 4
 };
 require('webvr-polyfill');
 
