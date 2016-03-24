@@ -77,7 +77,12 @@ var AScene = module.exports = registerElement('a-scene', {
         initWakelock(this);
 
         window.addEventListener('load', this.resize.bind(this));
-        window.addEventListener('resize', this.resize.bind(this), false);
+        window.addEventListener('resize', this.resize.bind(this));
+        var self = this;
+        window.addEventListener('enter-vr', function () {
+          self.resize();
+        });
+        window.addEventListener('beforeunload', this.exitVR.bind(this));
         this.addEventListener('fullscreen-exit', this.exitVR.bind(this));
         this.play();
       },
@@ -129,11 +134,7 @@ var AScene = module.exports = registerElement('a-scene', {
     enterVR: {
       value: function (event) {
         this.setStereoRenderer();
-        if (isMobile) {
-          setFullscreen(this.canvas);
-        } else {
-          this.stereoRenderer.setFullScreen(true);
-        }
+        this.stereoRenderer.requestPresent().catch(this.exitVR.bind(this));
         this.addState('vr-mode');
         this.emit('enter-vr', event);
       }
@@ -217,6 +218,7 @@ var AScene = module.exports = registerElement('a-scene', {
             antialias: antialias,
             alpha: true
           });
+        // var dps = window.WebVRConfig && 'BUFFER_SCALE' in window.WebVRConfig ? window.WebVRConfig.BUFFER_SCALE : window.devicePixelRatio;
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.sortObjects = false;
         AScene.renderer = renderer;
@@ -318,6 +320,8 @@ function getCanvasSize (canvas) {
     return {
       height: window.innerHeight,
       width: window.innerWidth
+      // height: getScreenHeight(),
+      // width: getScreenWidth()
     };
   }
   return {
@@ -326,18 +330,10 @@ function getCanvasSize (canvas) {
   };
 }
 
-/**
- * Manually handles fullscreen for non-VR mobile where the renderer' VR
- * display is not polyfilled.
- *
- * Desktop just works so use the renderer.setFullScreen in that case.
- */
-function setFullscreen (canvas) {
-  if (canvas.requestFullscreen) {
-    canvas.requestFullscreen();
-  } else if (canvas.mozRequestFullScreen) {
-    canvas.mozRequestFullScreen();
-  } else if (canvas.webkitRequestFullscreen) {
-    canvas.webkitRequestFullscreen();
-  }
-}
+var getScreenWidth = function() {
+  return Math.max(window.screen.width, window.screen.height);
+};
+
+var getScreenHeight = function() {
+  return Math.min(window.screen.width, window.screen.height);
+};
