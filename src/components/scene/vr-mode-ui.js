@@ -78,6 +78,7 @@ module.exports.Component = registerComponent('vr-mode-ui', {
   },
 
   toggleEnterVRButtonIfNeeded: function () {
+    console.error('vr-mode', this.enterVREl, this.el && this.el.is('vr-mode'));
     if (!this.enterVREl) { return; }
     var scene = this.el;
     if (scene.is('vr-mode')) {
@@ -120,8 +121,8 @@ function createEnterVR (enterVRHandler, isMobile) {
   var compatModal;
   var compatModalLink;
   var compatModalText;
-  // window.hasNonPolyfillWebVRSupport is set in src/index.js.
-  var hasWebVR = isMobile || window.hasNonPolyfillWebVRSupport;
+  // window.hasNativeWebVRSupport is set in src/index.js.
+  var hasWebVR = isMobile || window.hasNativeWebVRSupport;
   var orientation;
   var vrButton;
   var wrapper;
@@ -138,6 +139,7 @@ function createEnterVR (enterVRHandler, isMobile) {
   compatModalLink.innerHTML = 'Learn more.';
   vrButton = document.createElement('button');
   vrButton.className = ENTER_VR_BTN_CLASS;
+  vrButton.title = 'Enter VR';
 
   // Insert elements.
   wrapper.appendChild(vrButton);
