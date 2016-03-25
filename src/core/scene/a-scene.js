@@ -72,13 +72,15 @@ var AScene = module.exports = registerElement('a-scene', {
 
     attachedCallback: {
       value: function () {
+        var resize = this.resize.bind(this);
+        var exitVR = this.exitVR.bind(this);
         initFullscreen(this);
         initMetaTags(this);
         initWakelock(this);
-
-        window.addEventListener('load', this.resize.bind(this));
-        window.addEventListener('resize', this.resize.bind(this), false);
-        this.addEventListener('fullscreen-exit', this.exitVR.bind(this));
+        window.addEventListener('load', resize);
+        window.addEventListener('resize', resize);
+        window.addEventListener('beforeunload', exitVR);
+        this.addEventListener('fullscreen-exit', exitVR);
         this.play();
       },
       writable: window.debug
@@ -129,11 +131,7 @@ var AScene = module.exports = registerElement('a-scene', {
     enterVR: {
       value: function (event) {
         this.setStereoRenderer();
-        if (isMobile) {
-          setFullscreen(this.canvas);
-        } else {
-          this.stereoRenderer.setFullScreen(true);
-        }
+        this.stereoRenderer.requestPresent().catch(this.exitVR.bind(this));
         this.addState('vr-mode');
         this.emit('enter-vr', event);
       }
@@ -141,6 +139,9 @@ var AScene = module.exports = registerElement('a-scene', {
 
     exitVR: {
       value: function () {
+        if (navigator.getVRDisplays) {
+          this.stereoRenderer.exitPresent();
+        }
         this.setMonoRenderer();
         this.removeState('vr-mode');
         this.emit('exit-vr', { target: this });
@@ -180,7 +181,7 @@ var AScene = module.exports = registerElement('a-scene', {
         camera.updateProjectionMatrix();
 
         // Notify renderer of size change.
-        this.renderer.setSize(size.width, size.height, true);
+        this.renderer.setSize(size.width, size.height);
       },
       writable: window.debug
     },
@@ -217,7 +218,7 @@ var AScene = module.exports = registerElement('a-scene', {
             antialias: antialias,
             alpha: true
           });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.floor(window.devicePixelRatio));
         renderer.sortObjects = false;
         AScene.renderer = renderer;
         this.stereoRenderer = new THREE.VREffect(renderer);
@@ -327,20 +328,4 @@ function getCanvasSize (canvas) {
     height: canvas.offsetHeight,
     width: canvas.offsetWidth
   };
-}
-
-/**
- * Manually handles fullscreen for non-VR mobile where the renderer' VR
- * display is not polyfilled.
- *
- * Desktop just works so use the renderer.setFullScreen in that case.
- */
-function setFullscreen (canvas) {
-  if (canvas.requestFullscreen) {
-    canvas.requestFullscreen();
-  } else if (canvas.mozRequestFullScreen) {
-    canvas.mozRequestFullScreen();
-  } else if (canvas.webkitRequestFullscreen) {
-    canvas.webkitRequestFullscreen();
-  }
 }

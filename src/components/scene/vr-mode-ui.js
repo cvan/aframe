@@ -120,8 +120,8 @@ function createEnterVR (enterVRHandler, isMobile) {
   var compatModal;
   var compatModalLink;
   var compatModalText;
-  // window.hasNonPolyfillWebVRSupport is set in src/index.js.
-  var hasWebVR = isMobile || window.hasNonPolyfillWebVRSupport;
+  // window.hasNativeWebVRSupport is set in src/index.js.
+  var hasWebVR = isMobile || window.hasNativeWebVRSupport;
   var orientation;
   var vrButton;
   var wrapper;
