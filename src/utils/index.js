@@ -211,5 +211,19 @@ module.exports.isIframed = function () {
   return window.top !== window.self;
 };
 
+module.exports.parseMetaContent = function (tag) {
+  var obj = {};
+  var content = typeof tag === 'string' ? tag : tag.content;
+  if (!content) { return; }
+  var pairs = content.split(',');
+  if (pairs.length === 1) { pairs = content.split(';'); }  // Check for `;` just in case.
+  pairs.forEach(function (item) {
+    var chunks = item.replace(/[\s;,]+/g, '').split('=');
+    if (chunks.length !== 2) { return; }
+    obj[chunks[0]] = chunks[1];
+  });
+  return obj;
+};
+
 // Must be at bottom to avoid circular dependency.
 module.exports.srcLoader = require('./src-loader');

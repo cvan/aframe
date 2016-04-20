@@ -78,7 +78,6 @@ module.exports.Component = registerComponent('vr-mode-ui', {
   },
 
   toggleEnterVRButtonIfNeeded: function () {
-    console.error('vr-mode', this.enterVREl, this.el && this.el.is('vr-mode'));
     if (!this.enterVREl) { return; }
     var scene = this.el;
     if (scene.is('vr-mode')) {
