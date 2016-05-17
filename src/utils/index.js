@@ -17,14 +17,19 @@ module.exports.queryParams = require('./queryParams');
  * @param {String} name Name of the event.
  * @param {Object=} [data={bubbles: true, {detail: <el>}}]
  *   Data to pass as `customEventInit` to the event.
+ * @param {Boolean=} [postMsg=false]
+     Whether to `postMessage` info about the event.
  */
-module.exports.fireEvent = function (el, name, data) {
+module.exports.fireEvent = function (el, name, data, postMsg) {
   data = data || {};
   data.detail = data.detail || {};
   data.detail.target = data.detail.target || el;
   var evt = new CustomEvent(name, data);
   evt.target = el;
   el.dispatchEvent(evt);
+  if (postMsg) {
+    window.top.postMessage({type: 'event', data: evt}, '*');
+  }
 };
 
 /**

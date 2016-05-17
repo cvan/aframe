@@ -132,14 +132,16 @@ module.exports = registerElement('a-scene', {
         return this.effect.requestPresent().then(enterVRSuccess, enterVRFailure);
         function enterVRSuccess () {
           self.addState('vr-mode');
-          self.emit('enter-vr', event);
+          self.emit('enter-vr', event, undefined, true);
           // Lock to landscape orientation on mobile.
           if (self.isMobile && window.screen.orientation) {
             window.screen.orientation.lock('landscape');
           }
         }
         function enterVRFailure () {
-          throw new Error('enter VR mode error. requestPresent failed');
+          var msg = 'enter VR mode error. requestPresent failed';
+          self.emit('enter-vr-error', {error: msg}, undefined, true);
+          throw new Error(msg);
         }
       }
     },
@@ -149,16 +151,19 @@ module.exports = registerElement('a-scene', {
         var self = this;
         return this.effect.exitPresent().then(exitVRSuccess, exitVRFailure);
         function exitVRSuccess () {
+          var event = {target: self};
           self.removeState('vr-mode');
           // Lock to landscape orientation on mobile.
           if (self.isMobile && window.screen.orientation) {
             window.screen.orientation.unlock();
           }
           self.resize();
-          self.emit('exit-vr', {target: self});
+          self.emit('exit-vr', event);
         }
         function exitVRFailure () {
-          throw new Error('exit VR mode error. exitPresent failed');
+          var msg = 'exit VR mode error. exitPresent failed';
+          self.emit('exit-vr-error', {error: msg}, undefined, true);
+          throw new Error(msg);
         }
       }
     },

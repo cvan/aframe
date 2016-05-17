@@ -212,15 +212,17 @@ module.exports = registerElement('a-node', {
      *   Custom data to pass as `detail` to the event.
      * @param {Boolean=} [bubbles=true]
      *   Whether the event should bubble.
+     * @param {Boolean=} [postMsg=false]
+     *   Whether to `postMessage` info about the event.
      */
     emit: {
-      value: function (name, detail, bubbles) {
+      value: function (name, detail, bubbles, postMsg) {
         var self = this;
         detail = detail || {};
         if (bubbles === undefined) { bubbles = true; }
         var data = { bubbles: !!bubbles, detail: detail };
         return name.split(' ').map(function (eventName) {
-          return utils.fireEvent(self, eventName, data);
+          return utils.fireEvent(self, eventName, data, postMsg);
         });
       }
     },
