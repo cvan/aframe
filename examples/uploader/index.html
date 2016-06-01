@@ -91,6 +91,16 @@
         display: inline-block;
       }
 
+      .uploadcare-logo {
+        background: #fff url(uploadcare-logo.png) 50% 50% no-repeat;
+        background-size: auto 35px;
+        display: block;
+        height: 45px;
+        margin: 0 auto 4rem;
+        text-indent: -9999px;
+        width: 200px;
+      }
+
       .credits {
         bottom: 2vw;
         position: absolute;
@@ -185,8 +195,9 @@
       UPLOADCARE_TABS = 'file url facebook gdrive dropbox instagram evernote flickr skydrive';
       UPLOADCARE_PUBLIC_KEY = 'd8498171c34e5cff6628';
     </script>
-    <script src="//ucarecdn.com/widget/2.5.5/uploadcare/uploadcare.full.min.js"></script>
+    <script src="https://ucarecdn.com/widget/2.5.5/uploadcare/uploadcare.full.min.js"></script>
     <input type="hidden" role="uploadcare-uploader" data-multiple="true">
+    <a href="https://uploadcare.com/?utm_source=mozilla&utm_medium=partner&utm_campaign=aframe" id="uploadcare-logo" class="uploadcare-logo">Uploadcare</a>
     <script>
       (function () {
         var urls = JSON.parse(localStorage.uploadedFiles || '[]');
