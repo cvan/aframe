@@ -3,6 +3,7 @@ require('./collada-model');
 require('./cursor');
 require('./geometry');
 require('./light');
+require('./link');
 require('./look-at');
 require('./look-controls');
 require('./material');
