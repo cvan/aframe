@@ -66,6 +66,55 @@ module.exports = registerElement('a-scene', {
           this.resize();
         });
         initPostMessageAPI(this);
+
+        navigator.getVRDisplays = function () {
+          return Promise.resolve([
+            {displayName: 'fart', isPresenting: false},
+            {displayName: 'poop', isPresenting: false}
+          ]);
+        };
+
+        var updateVRDisplays = function () {
+          console.log('updateVRDisplays');
+
+          navigator.getVRDisplays().then(function (displays) {
+            if (!displays) { return; }
+
+            var activeVRDisplays = displays.filter(function (display) {
+              return display.isPresenting;
+            });
+
+            console.log('caches', window.caches);
+
+            // Mark the documents as cached, then gets all the HTML content and send to
+            // the service worker using a `PUT` request into `./render-store/` URL.
+            // You could be wondering we need to send the URL for the cached content
+            // but this info is implicitly added as the `referrer` property of the
+            // request.
+
+            var cache = function (obj) {
+              // var data = new FormData();
+              // data.append('json', JSON.stringify(obj));
+              var data = JSON.stringify(obj);
+              fetch('http://localhost:9000/_info/', {
+                method: 'PUT',
+                body: data
+              }).then(function (data) {
+                console.log('Page cached', data);
+              });
+            };
+
+            cache({
+              activeVRDisplays: activeVRDisplays,
+              allVRDisplays: displays
+            });
+          }).catch(console.error.bind(console));
+        };
+
+        updateVRDisplays();
+        // window.addEventListener('vrdisplayconnected', updateVRDisplays);
+        // window.addEventListener('vrdisplaydisconnected', updateVRDisplays);
+        // window.addEventListener('vrdisplaypresentchange', updateVRDisplays);
       },
       writable: true
     },

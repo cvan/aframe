@@ -12,6 +12,20 @@ window.WebVRConfig = window.WebVRConfig || {
   BUFFER_SCALE: 1 / window.devicePixelRatio
 };
 
+// Once the Service Worker is activated, load the Pokemon list.
+if ('serviceWorker' in navigator) {
+  if (navigator.serviceWorker.controller) {
+    console.log('navigator.serviceWorker.controller', navigator.serviceWorker.controller);
+    // loadPokemonList();
+  } else {
+    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.ready.then(function() {
+      console.log('ready');
+      // loadPokemonList();
+    });
+  }
+}
+
 // WebVR polyfill
 require('webvr-polyfill');
 
