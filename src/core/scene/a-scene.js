@@ -66,55 +66,93 @@ module.exports = registerElement('a-scene', {
           this.resize();
         });
         initPostMessageAPI(this);
+        this.activeVRDisplays = [];
+        var self = this;
 
-        navigator.getVRDisplays = function () {
-          return Promise.resolve([
-            {displayName: 'fart', isPresenting: false},
-            {displayName: 'poop', isPresenting: false}
-          ]);
+        if (!navigator.getVRDisplays) {
+          navigator.getVRDisplays = function () {
+            return Promise.resolve([
+              {displayName: 'fart', isPresenting: true},
+              {displayName: 'poop', isPresenting: false}
+            ]);
+          };
+        }
+
+        var serializeDisplays = function (displays) {
+          // displays;
         };
 
         var updateVRDisplays = function () {
           console.log('updateVRDisplays');
 
-          navigator.getVRDisplays().then(function (displays) {
+          return navigator.getVRDisplays().then(function (displays) {
             if (!displays) { return; }
 
-            var activeVRDisplays = displays.filter(function (display) {
+            displays = serializeDisplays(displays);
+
+            var activeVRDisplays = [];
+
+            if (activeVRDisplays) {
+              return fetch(url, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }).then(function (res) {
+                console.log('Page requested', res);
+              });
+
+              if (!scene.is('vr-mode')) {
+                return scene.enterVR().then(function () {
+                  console.log('viewmode entering VR');
+                  return projection;
+                }).catch(function (err) {
+                  console.error(err.message);
+                  return err;
+                });
+              }
+            }
+
+
+            activeVRDisplays = self.activeVRDisplays = displays.filter(function (display) {
               return display.isPresenting;
             });
 
             console.log('caches', window.caches);
 
-            // Mark the documents as cached, then gets all the HTML content and send to
-            // the service worker using a `PUT` request into `./render-store/` URL.
-            // You could be wondering we need to send the URL for the cached content
-            // but this info is implicitly added as the `referrer` property of the
-            // request.
+            var OFFLINE_URL = 'http://localhost:9000/_info/';
 
-            var cache = function (obj) {
-              // var data = new FormData();
-              // data.append('json', JSON.stringify(obj));
-              var data = JSON.stringify(obj);
-              fetch('http://localhost:9000/_info/', {
+            var cachePut = function (url, data) {
+              console.log('cachePut', navigator.serviceWorker.controller);
+              if (navigator.serviceWorker && !navigator.serviceWorker.controller) {
+                return Promise.resolve();
+              }
+              return fetch(url, {
                 method: 'PUT',
-                body: data
-              }).then(function (data) {
-                console.log('Page cached', data);
+                body: JSON.stringify(data),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Mock-Response': 'yes'
+                }
+              }).then(function (res) {
+                console.log('Page cached', res);
               });
             };
 
-            cache({
+            return cachePut(OFFLINE_URL, {
               activeVRDisplays: activeVRDisplays,
               allVRDisplays: displays
             });
           }).catch(console.error.bind(console));
         };
 
+        if (navigator.getVRDisplays) {
+        }
+
         updateVRDisplays();
-        // window.addEventListener('vrdisplayconnected', updateVRDisplays);
-        // window.addEventListener('vrdisplaydisconnected', updateVRDisplays);
-        // window.addEventListener('vrdisplaypresentchange', updateVRDisplays);
+        window.addEventListener('vrdisplayconnected', updateVRDisplays);
+        window.addEventListener('vrdisplaydisconnected', updateVRDisplays);
+        window.addEventListener('vrdisplaypresentchange', updateVRDisplays);
       },
       writable: true
     },

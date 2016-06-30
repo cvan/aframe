@@ -15,14 +15,13 @@ window.WebVRConfig = window.WebVRConfig || {
 // Once the Service Worker is activated, load the Pokemon list.
 if ('serviceWorker' in navigator) {
   if (navigator.serviceWorker.controller) {
-    console.log('navigator.serviceWorker.controller', navigator.serviceWorker.controller);
-    // loadPokemonList();
+    console.log('The service worker is currently handling network operations.');
   } else {
     navigator.serviceWorker.register('/sw.js');
     navigator.serviceWorker.ready.then(function() {
       console.log('ready');
       // loadPokemonList();
-    });
+    }).catch(console.error.bind(console));
   }
 }
 

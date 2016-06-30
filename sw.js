@@ -1,24 +1,63 @@
-/* global fetch */
+'use strict';
+
+// Incrementing CACHE_VERSION will kick off the install event and force previously cached
+// resources to be cached again.
+var CACHE_VERSION = 1;
+var CURRENT_CACHES = {
+  offline: 'offline-v' + CACHE_VERSION
+};
+var OFFLINE_URL = '/_info/';
 
 // Install the Service Worker ASAP.
 self.addEventListener('install', function (event) {
-  event.waitUntil(self.skipWaiting());
+  // TODO: Install `/_info/`.
+  var request = new Request(OFFLINE_URL);
+  event.waitUntil(
+    getFromCache(request).then(function (response) {
+      return response;
+    }, function () {
+      return cacheInRenderStore(new Request(OFFLINE_URL));
+    })
+  );
 });
 
 self.addEventListener('activate', function (event) {
-  event.waitUntil(self.clients.claim());
+  // Delete all caches that aren't named in CURRENT_CACHES.
+  // While there is only one cache in this example, the same logic will handle
+  // the case where there are multiple versioned caches.
+  let expectedCacheNames = Object.keys(CURRENT_CACHES).map(function (key) {
+    return CURRENT_CACHES[key];
+  });
+
+  event.waitUntil(
+    caches.keys().then(function (cacheNames) {
+      return Promise.all(
+        cacheNames.map(function (cacheName) {
+          if (expectedCacheNames.indexOf(cacheName) === -1) {
+            // If this cache name isn't present in the array of "expected"
+            // cache names, then delete it.
+            console.log('Deleting expired cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
 });
 
 // When fetching, distinguish on the method.
 self.addEventListener('fetch', function (event) {
-  if (event.request.url !== 'http://localhost:9000/_info/') {
+  var requestUrl = new URL(event.request.url);
+
+  if (requestUrl.pathname !== '/_info/' ||
+      event.request.headers.has('X-Mock-Response')) {
     return;
   }
 
   // `GET` implies looking for a cached copy…
   if (event.request.method === 'GET') {
     console.log('GET', event.request.url);
-    event.respondWith(getFromRenderStoreOrNetwork(event.request));
+    event.respondWith(getFromCache(event.request));
   } else if (event.request.method === 'PUT') {
     console.log('PUT', event.request.url);
     // While `PUT` means to cache contents…
@@ -28,26 +67,22 @@ self.addEventListener('fetch', function (event) {
   }
 });
 
-// It tries to recover a cached copy for the document. If not found,
-// it respond from the network.
-function getFromRenderStoreOrNetwork (request) {
-  return self.caches.open('_info').then(function (cachedResponse) {
-    return cachedResponse.text();
-  }).then(function (contents) {
-    // Craft an `application/json` response for the contents to be cached.
-    var headers = {'Content-Type': 'application/json'};
-    var response = new Response(contents, {headers: headers});
-  }).catch(console.error.bind(console));
+function getFromCache (request) {
+  console.log('getFromCache', request.url);
+  return self.caches.open(CURRENT_CACHES.offline).then(function (cache) {
+    return cache.match(OFFLINE_URL);
+  });
 }
 
-// Obtains the interpolated HTML contents of a `PUT` request from the
-// `pokemon.js` client code and crafts an HTML response for the interpolated
-// result.
 function cacheInRenderStore (request) {
   return request.text().then(function (contents) {
-    // Craft an `application/json` response for the contents to be cached.
-    var headers = {'Content-Type': 'application/json'};
+    var headers = {
+      'Content-Type': 'application/json',
+      'X-Mock-Response': 'yes'
+    };
     var response = new Response(contents, {headers: headers});
-    return self.cache.put('_info', response);
+    return self.caches.open(CURRENT_CACHES.offline);
+  }).then(function (cache) {
+    return cache.put(OFFLINE_URL, response);
   });
 }
