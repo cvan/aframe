@@ -1,3 +1,4 @@
+/* global caches, Request, Response, self, URL */
 'use strict';
 
 // Incrementing CACHE_VERSION will kick off the install event and force previously cached
@@ -83,6 +84,6 @@ function cacheInRenderStore (request) {
     var response = new Response(contents, {headers: headers});
     return self.caches.open(CURRENT_CACHES.offline);
   }).then(function (cache) {
-    return cache.put(OFFLINE_URL, response);
+    return cache.put(request, response);
   });
 }

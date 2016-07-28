@@ -1,4 +1,4 @@
-/* global Promise */
+/* global fetch, Promise */
 var initMetaTags = require('./metaTags').inject;
 var initWakelock = require('./wakelock');
 var re = require('../a-register-element');
@@ -92,35 +92,34 @@ module.exports = registerElement('a-scene', {
 
             var activeVRDisplays = [];
 
+            console.log('caches', window.caches);
+
+            var OFFLINE_URL = 'http://localhost:9000/_info/';
+
             if (activeVRDisplays) {
-              return fetch(url, {
+              return fetch(OFFLINE_URL, {
                 method: 'GET',
                 headers: {
                   'Content-Type': 'application/json'
                 }
               }).then(function (res) {
                 console.log('Page requested', res);
+
+                if (!self.is('vr-mode')) {
+                  return self.enterVR().then(function (projection) {
+                    console.log('viewmode entering VR');
+                    return projection;
+                  }).catch(function (err) {
+                    console.error(err.message);
+                    return err;
+                  });
+                }
               });
-
-              if (!scene.is('vr-mode')) {
-                return scene.enterVR().then(function () {
-                  console.log('viewmode entering VR');
-                  return projection;
-                }).catch(function (err) {
-                  console.error(err.message);
-                  return err;
-                });
-              }
             }
-
 
             activeVRDisplays = self.activeVRDisplays = displays.filter(function (display) {
               return display.isPresenting;
             });
-
-            console.log('caches', window.caches);
-
-            var OFFLINE_URL = 'http://localhost:9000/_info/';
 
             var cachePut = function (url, data) {
               console.log('cachePut', navigator.serviceWorker.controller);
