@@ -1,3 +1,7 @@
+alert(10);
+
+
+
 /* global Promise */
 var initMetaTags = require('./metaTags').inject;
 var initWakelock = require('./wakelock');

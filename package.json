@@ -7,8 +7,8 @@
   "scripts": {
     "build": "mkdirp build/ && npm run browserify -- --debug -o build/aframe.js",
     "browserify": "browserify src/index.js -s 'AFRAME' -p browserify-derequire",
-    "browsersync" : "browser-sync start --config ./scripts/browserify-config.js",
-    "dev": "npm run watchify | npm run browsersync",
+    "browsersync" : "node ./scripts/browserify-config.js",
+    "dev": "npm run browsersync",
     "dist": "mkdirp dist/ && npm run browserify -s -- --debug | exorcist dist/aframe.js.map > dist/aframe.js && uglifyjs dist/aframe.js -c warnings=false -m -o dist/aframe.min.js",
     "gh-pages": "npm run ghpages",
     "ghpages": "node ./scripts/gh-pages",
@@ -22,7 +22,6 @@
     "test:firefox": "karma start ./tests/karma.conf.js --browsers firefox_latest",
     "test:chrome": "karma start ./tests/karma.conf.js --browsers Chrome",
     "test:ci": "TEST_ENV=ci karma start ./tests/karma.conf.js --single-run --browsers firefox_latest",
-    "watchify": "watchify src/index.js -o build/aframe.js",
     "version": "npm run dist"
   },
   "repository": "aframevr/aframe",

@@ -14,14 +14,21 @@
 
 var urllib = require('url');
 var urlParse = urllib.parse;
+
 function isEnabled (val) {
   val = val || '';
   return val !== '' && val !== '0' && val !== 'false' && val !== 'off';
 }
 
-function getEnvVar (name, defaultVal) {
+function getBoolEnvVar (name, defaultVal) {
   return name in process.env ? isEnabled(name) : defaultVal;
 }
+
+function getIntEnvVar (name, defaultVal) {
+  return name in process.env ? process.env[name] : defaultVal;
+}
+
+var bs = require('browser-sync').create();
 
 var opts = {
   server: {baseDir: './'},
@@ -37,12 +44,34 @@ var opts = {
     }
   ],
   rewriteRules: [],
-  files: ['build/aframe.js'],
-  watchOptions: {ignoreInitial: true},
-  open: getEnvVar('BS_OPEN', false),
-  notify: getEnvVar('BS_NOTIFY', false),
-  tunnel: getEnvVar('BS_TUNNEL', false),
-  minify: getEnvVar('BS_MINIFY', false)
+  files: [
+    'examples/**',
+    {
+      match: ['src/**', 'vendor/**'],
+      fn: function (event, file) {
+        console.log('matched', event, file);
+        if (event === 'change') {
+
+          var browserify = require('browserify');
+          var b = browserify();
+          b.add('./src/index.js');
+          var fs = require('fs');
+          b.bundle().pipe(fs.createWriteStream('build/aframe.js'));
+          browsersync.reload('build/aframe.js');
+
+        }
+        /** Custom event handler **/
+        // console.log(event, file);
+      }
+    }
+  ],
+  // files: ['build/aframe.js', 'examples/*.html'],
+  // watchOptions: {ignoreInitial: true},
+  port: getIntEnvVar('PORT', 9000),
+  open: getBoolEnvVar('BS_OPEN', false),
+  notify: getBoolEnvVar('BS_NOTIFY', false),
+  tunnel: getBoolEnvVar('BS_TUNNEL', false),
+  minify: getBoolEnvVar('BS_MINIFY', false)
 };
 
-module.exports = opts;
+bs.init(opts);
