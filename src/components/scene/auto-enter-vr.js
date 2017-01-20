@@ -4,11 +4,14 @@ var utils = require('../../utils');
 /**
  * Automatically enter VR, either upon vrdisplayactivate (e.g. putting on Rift headset)
  * or immediately (if possible) if display name contains data string.
- * The default data string is 'GearVR' for Carmel browser which only does VR.
+ * The default data string is ''. Currently, Firefox Nightly and
+ * Oculus Carmel for Gear VR can automatically auto-enter VR. As such,
+ * if there is an active VR display whose `displayName` that begins with
+ * 'GearVR', we auto-enter VR.
  */
 module.exports.Component = registerComponent('auto-enter-vr', {
   schema: {
-    display: {type: 'string', default: 'GearVR'},
+    browser: {type: 'string'},
     enabled: {type: 'boolean', default: true}
   },
 
@@ -17,40 +20,73 @@ module.exports.Component = registerComponent('auto-enter-vr', {
     var self = this;
 
     // define methods to allow mock testing
+    this.hasAutoEntered = false;
     this.enterVR = scene.enterVR.bind(scene);
     this.exitVR = scene.exitVR.bind(scene);
     this.shouldAutoEnterVR = this.shouldAutoEnterVR.bind(this);
 
-    // don't do anything if false
+    // Don't do anything if false.
     if (utils.getUrlParameter('auto-enter-vr') === 'false') { return; }
 
-    // enter VR on vrdisplayactivate (e.g. putting on Rift headset)
-    window.addEventListener('vrdisplayactivate', function () { self.enterVR(); }, false);
+    // Enter VR on vrdisplayactivate (e.g., putting on Rift headset).
+    window.addEventListener('vrdisplayactivate', function () {
+      if (self.shouldAutoEnterVR()) { self.enterVR(); }
+    }, false);
 
-    // exit VR on vrdisplaydeactivate (e.g. taking off Rift headset)
-    window.addEventListener('vrdisplaydeactivate', function () { self.exitVR(); }, false);
+    // Exit VR on vrdisplaydeactivate (e.g., taking off Rift headset).
+    window.addEventListener('vrdisplaydeactivate', function () {
+      if (scene.is('vr-mode')) {
+        self.exitVR();
+      }
+    }, false);
 
-    // check if we should try to enter VR... turns out we need to wait for next tick
-    setTimeout(function () { if (self.shouldAutoEnterVR()) { self.enterVR(); } }, 0);
+    // Check if we should try to enter VR (and wait for next tick).
+    setTimeout(function () {
+      if (self.shouldAutoEnterVR()) { self.enterVR(); }
+    }, 0);
   },
 
   update: function () {
+    this.hasAutoEntered = false;
     return this.shouldAutoEnterVR() ? this.enterVR() : this.exitVR();
   },
 
   shouldAutoEnterVR: function () {
     var scene = this.el;
     var data = this.data;
-    // if false, we should not auto-enter VR
-    if (!data.enabled) { return false; }
-    // if we have a data string to match against display name, try and get it;
-    // if we can't get display name, or it doesn't match, we should not auto-enter VR
-    if (data.display) {
-      var display = scene.effect && scene.effect.getVRDisplay && scene.effect.getVRDisplay();
-      if (!display || !display.displayName || display.displayName.indexOf(data.display) < 0) { return false; }
+
+    // Bail if we've already attempted to auto-enter VR or we're already in VR mode.
+    if (this.hasAutoEntered || scene.is('vr-mode')) {
+      return false;
     }
-    // we should auto-enter VR
+    // Bail when `auto-enter-vr="enabled: false"`.
+    if (!data.enabled) { return false; }
+
+    if (data.browser) {
+      var browser = data.browser.toLowerCase();
+      // Begin feature detection (and UA/display Name detection when necessary).
+      if (browser.indexOf('firefox') < 0 && !navigator.buildID) {
+        return false;
+      }
+      if ((browser.indexOf('chromium') > 0 || browser.indexOf('chrome') > 0) && !('chrome' in window)) {
+        return false;
+      }
+      var ua = navigator.userAgent.toLowerCase();
+      if (browser.indexOf('samsung') > 0 && ua.indexOf('samsungbrowser') > 0) {
+        return false;
+      }
+      if (browser.indexOf('carmel') > 0) {
+        // If we're trying to filter for Carmel, we need to grab the name of the current VR display.
+        var currentDisplay = scene.effect && scene.effect.getVRDisplay && scene.effect.getVRDisplay();
+        if (!currentDisplay ||
+            (currentDisplay.displayName || '').toLowerCase() !== 'gearvr') {
+          return false;
+        }
+      }
+    }
+
+    this.hasAutoEntered = true;
+    // We should auto-enter VR.
     return true;
   }
 });
-

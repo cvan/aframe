@@ -15,7 +15,7 @@ var karma_conf = {
   ],
   files: [
     // Define test files.
-    {pattern: 'tests/**/*.test.js'},
+    {pattern: 'tests/**/auto-enter-vr.test.js'},
     // Serve test assets.
     {pattern: 'tests/assets/**/*', included: false, served: true}
   ],

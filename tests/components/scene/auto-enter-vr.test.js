@@ -96,14 +96,14 @@ suite('auto-enter-vr', function () {
     });
   });
 
-  suite('getVRDisplay() displayName something else', function () {
+  suite('correctly auto-enters VR when `VRDisplay.displayName` matches `display` component property', function () {
     setup(function (done) {
       this.entityEl = entityFactory();
       var el = this.el = this.entityEl.parentNode;
       var resolvePromise = function () { return Promise.resolve(); };
       el.setAttribute('auto-enter-vr', '');
       el.effect = {
-        getVRDisplay: function () { return {displayName: 'something else'}; },
+        getVRDisplay: function () { return {displayName: 'GearVR'}; },
         requestPresent: resolvePromise,
         exitPresent: resolvePromise
       };
@@ -129,14 +129,14 @@ suite('auto-enter-vr', function () {
     });
   });
 
-  suite('getVRDisplay() displayName GearVR something', function () {
+  suite('getVRDisplay() displayName "gearvr Version 1.0"', function () {
     setup(function (done) {
       this.entityEl = entityFactory();
       var el = this.el = this.entityEl.parentNode;
       var resolvePromise = function () { return Promise.resolve(); };
       el.setAttribute('auto-enter-vr', '');
       el.effect = {
-        getVRDisplay: function () { return {displayName: 'GearVR something'}; },
+        getVRDisplay: function () { return {displayName: 'gearvr Version 1.0'}; },
         requestPresent: resolvePromise,
         exitPresent: resolvePromise
       };
