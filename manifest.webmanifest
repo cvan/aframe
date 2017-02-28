@@ -1,0 +1,36 @@
+{
+  "lang": "en",
+  "dir": "ltr",
+  "name": "A-Frame",
+  "short_name": "A-Frame",
+  "description": "A Web framework for building Virtual Reality experiences.",
+  "start_url": "./?src=manifest",
+  "display": "fullscreen",
+  "theme_color": "#000",
+  "background_color": "#ef2d5e",
+  "icons": [
+    {
+      "src": "https://aframe.io/images/aframe-logo.png",
+      "sizes": "480x480",
+      "type": "image/png"
+    },
+    {
+      "src": "https://aframe.io/images/aframe-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://aframe.io/images/aframe-logo-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    }
+  ],
+  "vr_default_display": "HTC Vive",
+  "vr_available_displays": [
+    "HTC Vive",
+    "Oculus Rift",
+    "Google Daydream",
+    "Samsung Gear VR",
+    "Google Cardboard"
+  ]
+}

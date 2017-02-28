@@ -3,6 +3,28 @@ var utils = require('./utils/');
 var debug = utils.debug;
 var warn = debug('A-Frame:warn');
 
+(function (win, doc) {
+  var isDev = win.location.port !== 80 && win.location.port !== 443;
+  var originWithoutPort = win.location.protocol + '//' + win.location.hostname;
+
+  var webvrAgentScript = doc.querySelector('script[src*="agent"][src*="/client.js"]');
+  var webvrAgentScriptSrcLocal = originWithoutPort + ':4040/client.js';
+
+  if (webvrAgentScript) {
+    if (isDev) {
+      if (webvrAgentScript) {
+        webvrAgentScript.abort = true;
+        webvrAgentScript.src = webvrAgentScript.src.replace(/(.+)client.js/, originWithoutPort + ':4040/client.js');
+      }
+    }
+  } else {
+    webvrAgentScript = doc.createElement('script');
+    webvrAgentScript.src = isDev ? webvrAgentScriptSrcLocal : 'https://agent.webvr.rocks/client.js';
+    webvrAgentScript.async = webvrAgentScript.defer = true;
+    doc.head.appendChild(webvrAgentScript);
+  }
+})(window, document);
+
 if (document.currentScript && document.currentScript.parentNode !== document.head &&
     !window.debug) {
   warn('Put the A-Frame <script> tag in the <head> of the HTML *before* the scene to ' +
