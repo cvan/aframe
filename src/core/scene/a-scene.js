@@ -170,86 +170,114 @@ module.exports = registerElement('a-scene', {
      */
     enterVR: {
       value: function (event) {
-        var self = this;
-
-        // Don't enter VR if already in VR.
-        if (this.is('vr-mode')) { return Promise.resolve('Already in VR.'); }
+        // Don't enter VR if already in VR mode.
+        if (this.is('vr-mode')) {
+          return Promise.resolve('Already in VR mode.');
+        }
 
         if (this.checkHeadsetConnected() || this.isMobile) {
-          return this.effect.requestPresent().then(enterVRSuccess, enterVRFailure);
+          return this.effect.requestPresent().then(
+            bind(this.enterVRSuccess, this, event),
+            bind(this.enterVRFailure, this, event)
+          );
         }
-        enterVRSuccess();
+
+        bind(this.enterVRSuccess, this, event);
+
         return Promise.resolve();
+      }
+    },
 
-        function enterVRSuccess () {
-          self.addState('vr-mode');
-          self.emit('enter-vr', event);
+    enterVRSuccess: {
+      value: function (event) {
+        event = event || {};
+        event.target = this;
 
-          // Lock to landscape orientation on mobile.
-          if (self.isMobile && screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('landscape');
-          }
-          self.addFullScreenStyles();
+        this.addState('vr-mode');
+        this.emit('enter-vr', event);
 
-          // On mobile, the polyfill handles fullscreen.
-          // TODO: 07/16 Chromium builds break when `requestFullscreen`ing on a canvas
-          // that we are also `requestPresent`ing. Until then, don't fullscreen if headset
-          // connected.
-          if (!self.isMobile && !self.checkHeadsetConnected()) {
-            requestFullscreen(self.canvas);
-          }
-          self.resize();
+        // Lock to landscape orientation on mobile.
+        if (this.isMobile && screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape');
         }
 
-        function enterVRFailure (err) {
-          if (err && err.message) {
-            throw new Error('Failed to enter VR mode (`requestPresent`): ' + err.message);
-          } else {
-            throw new Error('Failed to enter VR mode (`requestPresent`).');
-          }
+        this.addFullScreenStyles();
+
+        // On mobile, the polyfill handles entering Fullscreen mode.
+        if (!this.isMobile) {
+          requestFullscreen(this.canvas);
+        }
+
+        this.resize();
+      }
+    },
+
+    enterVRFailure: {
+      value: function (err) {
+        if (err && err.message) {
+          throw new Error('Failed to enter VR mode (`requestPresent`): ' + err.message);
+        } else {
+          throw new Error('Failed to enter VR mode (`requestPresent`).');
         }
       }
     },
-     /**
+
+    /**
      * Call `exitPresent` if WebVR or WebVR polyfill.
      * Handle events, states, fullscreen styles.
      *
      * @returns {Promise}
      */
     exitVR: {
-      value: function () {
-        var self = this;
-
+      value: function (event) {
         // Don't exit VR if not in VR.
-        if (!this.is('vr-mode')) { return Promise.resolve('Not in VR.'); }
+        if (!this.is('vr-mode')) {
+          return Promise.resolve('Not in VR mode.');
+        }
 
-        exitFullscreen();
+        bind(exitFullscreen, this);
 
         if (this.checkHeadsetConnected() || this.isMobile) {
-          return this.effect.exitPresent().then(exitVRSuccess, exitVRFailure);
+          return this.effect.exitPresent().then(
+            bind(this.exitVRSuccess, this, event),
+            bind(this.exitVRFailure, this, event));
         }
-        exitVRSuccess();
+
+        bind(this.exitVRSuccess, this, event);
+
         return Promise.resolve();
+      }
+    },
 
-        function exitVRSuccess () {
-          self.removeState('vr-mode');
-          // Lock to landscape orientation on mobile.
-          if (self.isMobile && screen.orientation && screen.orientation.unlock) {
-            screen.orientation.unlock();
-          }
-          // Exiting VR in embedded mode, no longer need fullscreen styles.
-          if (self.hasAttribute('embedded')) { self.removeFullScreenStyles(); }
-          self.resize();
-          if (self.isIOS) { utils.forceCanvasResizeSafariMobile(this.canvas); }
-          self.emit('exit-vr', {target: self});
+    exitVRSuccess: {
+      value: function (event) {
+        event = event || {};
+        event.target = this;
+
+        this.removeState('vr-mode');
+
+        // Lock to landscape orientation on mobile.
+        if (this.isMobile && screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
         }
 
-        function exitVRFailure (err) {
-          if (err && err.message) {
-            throw new Error('Failed to exit VR mode (`exitPresent`): ' + err.message);
-          } else {
-            throw new Error('Failed to exit VR mode (`exitPresent`).');
-          }
+        // Exiting VR in embedded mode, no longer need fullscreen styles.
+        if (this.hasAttribute('embedded')) { this.removeFullScreenStyles(); }
+
+        this.resize();
+
+        if (this.isIOS) { utils.forceCanvasResizeSafariMobile(this.canvas); }
+
+        this.emit('exit-vr', event);
+      }
+    },
+
+    exitVRFailure: {
+      value: function (err) {
+        if (err && err.message) {
+          throw new Error('Failed to exit VR mode (`exitPresent`): ' + err.message);
+        } else {
+          throw new Error('Failed to exit VR mode (`exitPresent`).');
         }
       }
     },
@@ -500,21 +528,29 @@ function getCanvasSize (canvasEl, embedded) {
   };
 }
 
-function requestFullscreen (canvas) {
-  var requestFullscreen =
-    canvas.requestFullscreen ||
-    canvas.webkitRequestFullscreen ||
-    canvas.mozRequestFullScreen ||  // The capitalized `S` is not a typo.
-    canvas.msRequestFullscreen;
-  requestFullscreen.apply(canvas);
+function requestFullscreen (canvasEl) {
+  if (!canvasEl) {
+    canvasEl = document.documentElement;
+  }
+  var requestFullscreenMethod =
+    canvasEl.requestFullscreen ||
+    canvasEl.webkitRequestFullscreen ||
+    canvasEl.mozRequestFullScreen ||  // The capitalized `S` is not a typo.
+    canvasEl.msRequestFullscreen;
+  if (!requestFullscreenMethod) {
+    throw new Error('Could not enter Fullscreen mode.');
+  }
+  return requestFullscreenMethod.apply(canvasEl);
 }
 
 function exitFullscreen () {
-  if (document.exitFullscreen) {
-    document.exitFullscreen();
-  } else if (document.mozCancelFullScreen) {
-    document.mozCancelFullScreen();
-  } else if (document.webkitExitFullscreen) {
-    document.webkitExitFullscreen();
+  var exitFullscreenMethod =
+    document.exitFullscreen ||
+    document.webkitExitFullscreen ||
+    document.mozExitFullScreen ||  // The capitalized `S` is not a typo.
+    document.msExitFullscreen;
+  if (!exitFullscreenMethod) {
+    throw new Error('Could not exit Fullscreen mode.');
   }
+  return exitFullscreenMethod();
 }

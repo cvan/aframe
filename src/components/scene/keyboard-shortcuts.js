@@ -18,10 +18,10 @@ module.exports.Component = registerComponent('keyboard-shortcuts', {
     this.listener = window.addEventListener('keyup', function (event) {
       if (!shouldCaptureKeyEvent(event)) { return; }
       if (self.enterVREnabled && event.keyCode === 70) {  // f.
-        scene.enterVR();
+        scene.enterVR(event);
       }
       if (self.enterVREnabled && event.keyCode === 27) {  // escape.
-        scene.exitVR();
+        scene.exitVR(event);
       }
       if (self.resetSensorEnabled && event.keyCode === 90) {  // z.
         controls.resetSensor();

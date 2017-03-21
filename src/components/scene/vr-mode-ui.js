@@ -30,19 +30,41 @@ module.exports.Component = registerComponent('vr-mode-ui', {
     this.enterVREl = null;
     this.orientationModalEl = null;
 
-    // Hide/show VR UI when entering/exiting VR mode.
-    sceneEl.addEventListener('enter-vr', bind(this.updateEnterVRInterface, this));
-    sceneEl.addEventListener('exit-vr', bind(this.updateEnterVRInterface, this));
-
-    window.addEventListener('message', function (event) {
-      if (event.data.type === 'loaderReady') {
+    this.enterVRListener = bind(this.updateEnterVRInterface, this);
+    this.exitVRListener = bind(this.updateEnterVRInterface, this);
+    this.postMessageListener = function (evt) {
+      if (evt.data.type === 'loaderReady') {
         self.insideLoader = true;
         self.remove();
       }
-    });
+    };
+    this.orientationChangeListener = bind(this.toggleOrientationModalIfNeeded, this);
 
-    // Modal that tells the user to change orientation if in portrait.
-    window.addEventListener('orientationchange', bind(this.toggleOrientationModalIfNeeded, this));
+    this.addEventListeners();
+  },
+
+  addEventListeners: function () {
+    var sceneEl = this.el;
+
+    // Hide/show VR UI when entering/exiting VR mode.
+    sceneEl.addEventListener('enter-vr', this.enterVRListener);
+    sceneEl.addEventListener('exit-vr', this.exitVRListener);
+
+    window.addEventListener('message', this.postMessageListener);
+
+    // Modal that tells the user to change orientation if in portrait mode.
+    window.addEventListener('orientationchange', this.orientationChangeListener);
+  },
+
+  removeEventListeners: function () {
+    var sceneEl = this.el;
+
+    sceneEl.removeEventListener('enter-vr', this.enterVRListener);
+    sceneEl.removeEventListener('exit-vr', this.exitVRListener);
+
+    window.removeEventListener('message', this.postMessageListener);
+
+    window.removeEventListener('orientationchange', this.orientationChangeListener);
   },
 
   update: function () {
@@ -64,6 +86,18 @@ module.exports.Component = registerComponent('vr-mode-ui', {
   },
 
   remove: function () {
+    this.removeEventListeners();
+
+    var vrButtonEl = this.enterVREl.querySelector(`.${ENTER_VR_BTN_CLASS}`);
+    if (vrButtonEl) {
+      vrButtonEl.removeEventListener('click', this.enterVR);
+    }
+
+    var exitButtonEl = this.orientationModalEl.querySelector(`button[${constants.AFRAME_INJECTED}]`);
+    if (exitButtonEl) {
+      exitButtonEl.removeEventListener('click', this.exitVR);
+    }
+
     [this.enterVREl, this.orientationModalEl].forEach(function (uiElement) {
       if (uiElement) {
         uiElement.parentNode.removeChild(uiElement);

@@ -2,9 +2,9 @@ var registerComponent = require('../../core/component').registerComponent;
 var utils = require('../../utils');
 
 /**
- * Automatically enter VR, either upon vrdisplayactivate (e.g. putting on Rift headset)
- * or immediately (if possible) if display name contains data string.
- * The default data string is 'GearVR' for Carmel browser which only does VR.
+ * Automatically enter VR, either upon `vrdisplayactivate` (e.g., putting a VR headset),
+ * or immediately enter VR (if possible) if the display name contains a data string.
+ * The default data string is 'GearVR' for the Oculus Carmel browser (which currently does only VR).
  */
 module.exports.Component = registerComponent('auto-enter-vr', {
   schema: {
@@ -16,22 +16,45 @@ module.exports.Component = registerComponent('auto-enter-vr', {
     var scene = this.el;
     var self = this;
 
-    // define methods to allow mock testing
-    this.enterVR = scene.enterVR.bind(scene);
-    this.exitVR = scene.exitVR.bind(scene);
+    // Define the methods for attaching event listeners easily
+    // (and also to allow mock testing of the methods).
     this.shouldAutoEnterVR = this.shouldAutoEnterVR.bind(this);
+    this.enterVR = function () {
+      // Check if we should try to enter VR.
 
-    // don't do anything if false
+      // Evidently, we need to wait for the next tick.
+      setTimeout(function () {
+        if (self.shouldAutoEnterVR()) {
+          scene.enterVR();
+        }
+      }, 0);
+    };
+    this.exitVR = function () {
+      setTimeout(function () {
+        scene.exitVR();
+      }, 0);
+    };
+
+    // Don't do anything when `?auto-enter-vr=false`.
     if (utils.getUrlParameter('auto-enter-vr') === 'false') { return; }
 
-    // enter VR on vrdisplayactivate (e.g. putting on Rift headset)
-    window.addEventListener('vrdisplayactivate', function () { self.enterVR(); }, false);
+    this.attachEventListeners();
+  },
 
-    // exit VR on vrdisplaydeactivate (e.g. taking off Rift headset)
-    window.addEventListener('vrdisplaydeactivate', function () { self.exitVR(); }, false);
+  attachEventListeners: function () {
+    // Enter VR on `vrdisplayactivate` (e.g., putting on a VR headset).
+    window.addEventListener('vrdisplayactivate', this.enterVR);
+    // Exit VR on `vrdisplaydeactivate` (e.g., taking off a VR headset).
+    window.addEventListener('vrdisplaydeactivate', this.exitVR);
+  },
 
-    // check if we should try to enter VR... turns out we need to wait for next tick
-    setTimeout(function () { if (self.shouldAutoEnterVR()) { self.enterVR(); } }, 0);
+  removeEventListeners: function () {
+    window.removeEventListener('vrdisplayactivate', this.enterVR);
+    window.removeEventListener('vrdisplaydeactivate', this.exitVR);
+  },
+
+  remove: function () {
+    this.removeEventListeners();
   },
 
   update: function () {
@@ -41,16 +64,21 @@ module.exports.Component = registerComponent('auto-enter-vr', {
   shouldAutoEnterVR: function () {
     var scene = this.el;
     var data = this.data;
-    // if false, we should not auto-enter VR
+
+    // If `false`, we should not auto-enter VR.
     if (!data.enabled) { return false; }
-    // if we have a data string to match against display name, try and get it;
-    // if we can't get display name, or it doesn't match, we should not auto-enter VR
+
+    // If we have a data string to match against display name, try and get it.
+    // If we can't get the headset's display name, or if it doesn't match,
+    // then we should not auto-enter VR.
     if (data.display && data.display !== 'all') {
       var display = scene.effect && scene.effect.getVRDisplay && scene.effect.getVRDisplay();
-      if (!display || !display.displayName || display.displayName.indexOf(data.display) < 0) { return false; }
+      if (!display || !display.displayName || display.displayName.indexOf(data.display) < 0) {
+        return false;
+      }
     }
-    // we should auto-enter VR
+
+    // We should auto-enter VR.
     return true;
   }
 });
-
