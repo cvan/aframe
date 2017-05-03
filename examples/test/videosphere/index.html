@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Videosphere</title>
+    <meta name="description" content="Videosphere - A-Frame">
+    <script src="../../../dist/aframe-master.min.js"></script>
+  </head>
+  <body>
+    <a-scene stats>
+      <a-assets>
+        <!--
+        Notes about using `preload` with `<video>` elements (via https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#Attributes):
+        - The `autoplay` attribute has precedence over `preload`. If `autoplay` is specified, the browser would obviously need to start downloading the video for playback.
+        - The specification does not force the browser to follow the value of this attribute; it is a mere hint.
+        -->
+        <!--
+        Source: https://www.youtube.com/watch?v=zUzLvybAGKM
+        -->
+        <video id="dolphins" preload="true"
+               src="https://ucarecdn.com/16cbcc72-ef7a-44f5-be04-3988d0ce9c6c/nice_dive_with_wild_dolphins.mp4"
+               width="360" height="360" autoplay loop="true"
+               crossorigin="anonymous"></video>
+      </a-assets>
+
+      <a-entity material="shader: flat; src: #dolphins" geometry="primitive: sphere; radius: 100"
+                scale="-1 1 1">
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
