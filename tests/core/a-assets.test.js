@@ -1,8 +1,46 @@
 /* global assert, setup, suite, test */
 var THREE = require('lib/three');
 
-var inferResponseType = require('core/a-assets').inferResponseType;
+var aAssets = require('core/a-assets');
 
+var extractOrigin = aAssets.extractOrigin;
+var inferResponseType = aAssets.inferResponseType;
+
+var PAGE_HTTP_URL_STR = 'http://localhost:9000/';
+var PAGE_HTTPS_URL_STR = 'https://localhost:9000/';
+var PAGE_HTTP_URL_OBJ = {
+  href: 'http://localhost:9000/',
+  origin: 'http://localhost:9000',
+  protocol: 'http:',
+  host: 'localhost:9000',
+  hostname: 'localhost',
+  port: '9000'
+};
+var PAGE_HTTPS_URL_OBJ = {
+  href: 'https://localhost:9000/',
+  origin: 'http://localhost:9000',
+  protocol: 'https:',
+  host: 'localhost:9000',
+  hostname: 'localhost',
+  port: '9000'
+};
+var PAGE_HTTP_URL_OBJ_NO_ORIGIN = {
+  href: 'http://localhost:9000/',
+  protocol: 'http:',
+  host: 'localhost:9000',
+  hostname: 'localhost',
+  port: '9000'
+};
+var PAGE_HTTPS_URL_OBJ_NO_ORIGIN = {
+  href: 'https://localhost:9000/',
+  origin: 'https://localhost:9000',
+  protocol: 'https:',
+  host: 'localhost:9000',
+  hostname: 'localhost',
+  port: '9000'
+};
+var PAGE_HTTPS_URL_ORIGIN = 'https://localhost:9000';
+var PAGE_HTTP_URL_ORIGIN = 'https://localhost:9000';
 var IMG_SRC = '/base/tests/assets/test.png';
 var XHR_SRC = '/base/tests/assets/dummy/dummy.txt';
 var XHR_SRC_GLTF = '/base/tests/assets/dummy/dummy.gltf';
@@ -327,6 +365,32 @@ suite('a-asset-item', function () {
 
     test('returns arraybuffer for .glb file', function () {
       assert.equal(inferResponseType(XHR_SRC_GLB), 'arraybuffer');
+    });
+  });
+
+  suite('extractOrigin', function () {
+    test('returns correct origin for HTTP URL as string', function () {
+      assert.equal(extractOrigin(PAGE_HTTP_URL_STR), PAGE_HTTP_URL_ORIGIN);
+    });
+
+    test('returns correct origin for HTTPS URL as string', function () {
+      assert.equal(extractOrigin(PAGE_HTTPS_URL_STR), PAGE_HTTPS_URL_ORIGIN);
+    });
+
+    test('returns correct origin for HTTP URL as object with origin', function () {
+      assert.equal(extractOrigin(PAGE_HTTPS_URL_OBJ), PAGE_HTTP_URL_ORIGIN);
+    });
+
+    test('returns correct origin for HTTPS URL as object with origin', function () {
+      assert.equal(extractOrigin(PAGE_HTTPS_URL_OBJ), PAGE_HTTPS_URL_ORIGIN);
+    });
+
+    test('returns correct origin for HTTP URL as object without origin', function () {
+      assert.equal(extractOrigin(PAGE_HTTPS_URL_OBJ_NO_ORIGIN), PAGE_HTTP_URL_ORIGIN);
+    });
+
+    test('returns correct origin for HTTPS URL as object without origin', function () {
+      assert.equal(extractOrigin(PAGE_HTTPS_URL_OBJ_NO_ORIGIN), PAGE_HTTPS_URL_ORIGIN);
     });
   });
 });
